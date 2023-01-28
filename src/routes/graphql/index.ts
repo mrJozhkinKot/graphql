@@ -93,11 +93,71 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
     usersWithSubscribers(id: ID): [UserWithSubscribers]
     usersWithSubscribersAndSubscriptions: [UserWithSubscribersAndSubscriptions]
   }
+  input UserInput {
+    id: ID
+    firstName: String!
+    lastName: String!
+    email: String!
+    subscribedToUserIds: [String]
+  }
+  input ProfileInput {
+    id: ID
+    avatar: String!
+    sex: String!
+    birthday: Float!
+    country: String!
+    street: String!
+    city: String!
+    memberTypeId: String!
+    userId: ID!
+  }
+  input PostInput {
+    id: String
+    title: String!
+    content: String!
+    userId: String!
+  }
+  type Mutation {
+    createUser(input: UserInput): User
+    createProfile(input: ProfileInput): Profile
+    createPost(input: PostInput): Post
+  }
 `);
 
 type ID = {
   id: string;
 }
+
+type UserInput = {
+  input: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    subscribedToUserIds?: string[];
+  }
+}
+
+type ProfileInput = {
+  input: {
+    avatar: string;
+    sex: string;
+    birthday: number;
+    country: string;
+    street: string;
+    city: string;
+    memberTypeId: string;
+    userId: string;
+  }
+}
+
+type PostInput = {
+  input: {
+    title: string;
+    content: string;
+    userId: string;
+  }
+}
+
  type UserWithInfo = {
   id: string;
   firstName: string;
@@ -225,7 +285,10 @@ const  rootValue = {
       }
     })
     return usersWithSubscribersAndSubscriptions
-  }
+  },
+  createUser: async ({input}: UserInput) => {return await fastify.db.users.create(input)},
+  createProfile: async ({input}: ProfileInput) => {return await fastify.db.profiles.create(input)},
+  createPost: async ({input}: PostInput) => {return await fastify.db.posts.create(input)}
 };
 
 
