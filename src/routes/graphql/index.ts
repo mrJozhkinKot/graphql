@@ -117,10 +117,25 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
     content: String!
     userId: String!
   }
+  input MemberTypeInput {
+    id: String
+    discount: Float
+    monthPostsLimit: Float
+  }
+  input SubscribeInput {
+    id: String,
+    userId: String
+  }
   type Mutation {
     createUser(input: UserInput): User
     createProfile(input: ProfileInput): Profile
     createPost(input: PostInput): Post
+    updateUser(input: UserInput): User
+    updateProfile(input: ProfileInput): Profile
+    updatePost(input: PostInput): Post
+    updateMemberType(input: MemberTypeInput): MemberType
+    subscribeTo(input: SubscribeInput): User
+    unsubscribeFrom(input: SubscribeInput): User
   }
 `);
 
@@ -133,6 +148,16 @@ type UserInput = {
     firstName: string;
     lastName: string;
     email: string;
+    subscribedToUserIds?: string[];
+  }
+}
+
+type UserUpdateInput = {
+  input: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     subscribedToUserIds?: string[];
   }
 }
@@ -150,10 +175,47 @@ type ProfileInput = {
   }
 }
 
+type ProfileUpdateInput = {
+  input: {
+    id: string;
+    avatar: string;
+    sex: string;
+    birthday: number;
+    country: string;
+    street: string;
+    city: string;
+    memberTypeId: string;
+    userId: string;
+  }
+}
 type PostInput = {
   input: {
     title: string;
     content: string;
+    userId: string;
+  }
+}
+
+type PostUpdateInput = {
+  input: {
+    id: string;
+    title: string;
+    content: string;
+    userId: string;
+  }
+}
+
+type MemberTypeUpdateInput = {
+  input: {
+    id: string;
+    discount: number;
+    monthPostsLimit: number;
+  }
+}
+
+type SubscribeInput = {
+  input: {
+    id: string;
     userId: string;
   }
 }
@@ -288,7 +350,36 @@ const  rootValue = {
   },
   createUser: async ({input}: UserInput) => {return await fastify.db.users.create(input)},
   createProfile: async ({input}: ProfileInput) => {return await fastify.db.profiles.create(input)},
-  createPost: async ({input}: PostInput) => {return await fastify.db.posts.create(input)}
+  createPost: async ({input}: PostInput) => {return await fastify.db.posts.create(input)},
+  updateUser: async ({input}: UserUpdateInput) => {return await fastify.db.users.change(input.id, input)},
+  updateProfile: async ({input}: ProfileUpdateInput) => {return await fastify.db.profiles.change(input.id, input)},
+  updatePost: async ({input}: PostUpdateInput) => {return await fastify.db.posts.change(input.id, input)},
+  updateMemberType: async ({input}: MemberTypeUpdateInput) => {return await fastify.db.memberTypes.change(input.id, input)},
+  subscribeTo: async ({input}: SubscribeInput) => {
+    const user = await fastify.db.users.findOne({key:'id', equals: input.id})
+    const subscribtion = await fastify.db.users.findOne({key:'id', equals: input.userId})
+    if (!subscribtion || !user) {
+      return null
+    }
+    await fastify.db.users.change(subscribtion.id, {subscribedToUserIds: [user.id, ...subscribtion.subscribedToUserIds] })
+    const updatedUser = await fastify.db.users.change(user.id, {subscribedToUserIds: [subscribtion.id, ...user.subscribedToUserIds]})
+    return updatedUser 
+  },
+  unsubscribeFrom: async ({input}: SubscribeInput) => {
+    const user = await fastify.db.users.findOne({key:'id', equals: input.id})
+    const subscribtion = await fastify.db.users.findOne({key:'id', equals: input.userId})
+      if (!user || !subscribtion) {
+        return null
+      }
+      const isSubscription = user.subscribedToUserIds.includes(subscribtion.id)
+      const isSubscriber = subscribtion.subscribedToUserIds.includes(user.id)
+      if (!isSubscription || !isSubscriber) {
+        return null
+      }
+      await fastify.db.users.change(subscribtion.id, {subscribedToUserIds: subscribtion.subscribedToUserIds.filter(userId => userId !== user.id)})
+      const updatedUser = await fastify.db.users.change(user.id, {subscribedToUserIds: user.subscribedToUserIds.filter(subscriberId => subscriberId !== subscribtion.id)})
+      return updatedUser
+  }
 };
 
 

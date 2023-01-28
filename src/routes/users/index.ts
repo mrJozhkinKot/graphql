@@ -97,7 +97,7 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         await fastify.db.users.change(subscribtion.id, {subscribedToUserIds: [user.id, ...subscribtion.subscribedToUserIds] })
 
 
-         const updateUser = await fastify.db.users.change(user.id, {subscribedToUserIds: [subscribtion.id, ...user.subscribedToUserIds] })
+        const updateUser = await fastify.db.users.change(user.id, {subscribedToUserIds: [subscribtion.id, ...user.subscribedToUserIds] })
 
       
       return reply.code(200).send(updateUser)
