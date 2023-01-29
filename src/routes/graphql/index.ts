@@ -1,15 +1,19 @@
 import { FastifyPluginAsyncJsonSchemaToTs } from '@fastify/type-provider-json-schema-to-ts';
 import { graphqlBodySchema } from './schema';
-import { graphql, buildSchema } from 'graphql';
+import { graphql, buildSchema, parse } from 'graphql';
+import { validate } from 'graphql/validation'
 import { UserEntity } from '../../utils/DB/entities/DBUsers';
 import { ID, UserWithInfo, UserWithSubscribeTo, UsersWithSubscribersAndSubscriptions, UserInput, ProfileInput, PostInput, UserUpdateInput, ProfileUpdateInput, PostUpdateInput, MemberTypeUpdateInput, SubscribeInput } from './types';
 import DataLoader = require('dataloader');
-//import depthLimit from 'graphql-depth-limit';
+import depthLimit = require('graphql-depth-limit');
+import { ERROR_REQUEST_LIMIT } from '../../utils/DB/errors/errorMessages';
+
+
 const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
   fastify
 ): Promise<void> => {
 
-
+  const depth = 3
 
   const loadUserPosts = async (keys: readonly string[]) => {
     return keys.map((key) =>
@@ -99,7 +103,7 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
     usersWithInfo: [UserWithInfo]
     userWithInfo(id: ID): UserWithInfo
     usersWithSubscribeTo: [UserWithSubscribeTo]
-    usersWithSubscribers(id: ID): [UserWithSubscribers]
+    userWithSubscribers(id: ID): [UserWithSubscribers]
     usersWithSubscribersAndSubscriptions: [UserWithSubscribersAndSubscriptions]
   }
   input UserInput {
@@ -153,7 +157,7 @@ const  rootValue = {
   users: async () => await fastify.db.users.findMany(),
   profiles: async () => await fastify.db.profiles.findMany(),
   posts:  async () => await fastify.db.posts.findMany(),
-  memberTypes: async () => await fastify.db.posts.findMany(),
+  memberTypes: async () => await fastify.db.memberTypes.findMany(),
   user: async ({id}:ID) =>  {return await fastify.db.users.findOne({key: 'id', equals: id})},
   profile: async ({id}:ID) =>  {return await fastify.db.profiles.findOne({key: 'id', equals: id})}, 
   post: async ({id}:ID) =>  {return await fastify.db.posts.findOne({key: 'id', equals: id})},
@@ -288,13 +292,23 @@ const  rootValue = {
       },
     },
     async function (request, reply) {
-      if(request.body.query) {
-        const res = await graphql({ schema,
-        source: request.body.query,
-        variableValues: request.body.variables,
-        rootValue})
-        reply.send(res)
-      }
+        if(request.body.query) {
+          const validateDepth = validate(
+            schema,
+            parse(request.body.query),  
+            [depthLimit(depth)]
+          )
+          if(validateDepth.length) {
+             throw new Error(ERROR_REQUEST_LIMIT)
+          }
+          const res = await graphql({ 
+          schema,
+          source: request.body.query,
+          variableValues: request.body.variables,
+          rootValue
+        })
+          reply.send(res)
+        }
     }
   );
 };

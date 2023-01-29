@@ -12,24 +12,230 @@ If the properties of the entity are not specified, then return the id of it.
 `subscribedToUser` - these are users who are following the current user.  
    
    * Get gql requests:  
-   2.1. Get users, profiles, posts, memberTypes - 4 operations in one query.  
-   2.2. Get user, profile, post, memberType by id - 4 operations in one query.  
-   2.3. Get users with their posts, profiles, memberTypes.  
-   2.4. Get user by id with his posts, profile, memberType.  
-   2.5. Get users with their `userSubscribedTo`, profile.  
-   2.6. Get user by id with his `subscribedToUser`, posts.  
-   2.7. Get users with their `userSubscribedTo`, `subscribedToUser` (additionally for each user in `userSubscribedTo`, `subscribedToUser` add their `userSubscribedTo`, `subscribedToUser`).  
-   * Create gql requests:   
-   2.8. Create user.  
-   2.9. Create profile.  
-   2.10. Create post.  
-   2.11. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs.  
+
+   2.1. Get users, profiles, posts, memberTypes - 4 operations in one query. <br>
+   _QUERY:_ <br>
+ query findAllEntities {
+    users {
+        id, firstName, lastName, email, subscribedToUserIds
+        }
+        profiles {
+            id, avatar, sex, birthday, country, street, city, memberTypeId
+        }
+        posts {
+        id, title, content, userId
+        }
+        memberTypes {
+            id, discount, monthPostsLimit
+        }
+    } <br>
+   2.2. Get user, profile, post, memberType by id - 4 operations in one query. <br>
+   _QUERY:_ <br>
+    query findByIds ($userId:ID, $profileId: ID, $postId:ID, $memberTypeId: ID){
+    user (id: $userId) {
+         id, firstName, lastName, email, subscribedToUserIds
+    }
+    profile (id: $profileId) {
+        id, avatar, sex, birthday, country, street, city, memberTypeId 
+    }
+    post (id: $postId) {
+        id, title, content, userId
+    }
+    memberType (id: $memberTypeId) {
+        id, discount, monthPostsLimit
+    }
+}    <br>
+   _VARIABLES_ <br>
+   {
+    "userId": "paste id",
+    "profileId": "paste id",
+    "postId": "paste id",
+    "memberTypeId": "paste basic or business"
+} <br>
+   2.3. Get users with their posts, profiles, memberTypes. <br>
+   _QUERY_ <br>
+   query findUsersWithInfo {
+    usersWithInfo {
+          id, firstName, lastName, email, subscribedToUserIds, profile {
+    id, avatar, sex, birthday, country, street, city, memberTypeId
+            },
+            posts {
+            id, title, content
+        }, memberType {
+            id, discount, monthPostsLimit
+        }
+        }
+    } <br>
+   2.4. Get user by id with his posts, profile, memberType. <br>
+    _QUERY_ <br>
+  query findUserWithInfo ($userId:ID){
+    userWithInfo(id: $userId){
+    id, firstName, lastName, email, subscribedToUserIds,
+    profile {
+    id, avatar, sex, birthday, country, street, city, memberTypeId   
+    }
+    posts {
+    id, title, content, userId
+    }
+       memberType {
+        id, discount, monthPostsLimit
+    }
+    }
+} <br>
+ _VARIABLES_ <br>
+ {
+    "userId": "f1399e51-d974-4fdc-b260-2149b295ddc8"
+} <br>
+   2.5. Get users with their `userSubscribedTo`, profile. <br>
+     _QUERY_ <br>
+query findUsersWithSubsribedToAndProfile {
+    usersWithSubscribeTo {
+          id, firstName, lastName, email, subscribedToUserIds, profile {
+    id, avatar, sex, birthday, country, street, city, memberTypeId
+            }
+        }
+    } <br>
+   2.6. Get user by id with his `subscribedToUser`, posts. <br> 
+    _QUERY_ <br>
+   query findUserWithSubsribedToUserAndPosts ($userId:ID) {
+    userWithSubscribers(id: $userId){
+          id, firstName, lastName, email, subscribedToUserIds, posts {
+    id, title, content
+            }
+        }
+    } <br>
+    _VARIABLES_ <br>
+    {
+    "userId": "c3a73bca-c097-4c1f-a0f8-e5c9c49190c1"
+} <br>
+   2.7. Get users with their `userSubscribedTo`, `subscribedToUser` (additionally for each user in `userSubscribedTo`, `subscribedToUser` add their `userSubscribedTo`, `subscribedToUser`). <br>
+   _QUERY_ <br> 
+   query findUsersWithSubscribersAndSubscriptions {
+    usersWithSubscribersAndSubscriptions{
+          id, firstName, lastName, email, subscribedToUserIds, 
+          userSubscribeTo {
+               id, firstName, lastName, email, subscribedToUserIds
+          }, subscribedToUser {
+               id, firstName, lastName, email, subscribedToUserIds
+          }
+        }
+    }  <br>
+
+   * Create gql requests:   <br>
+
+   2.8. Create user. <br>
+   _MUTATION_ <br> 
+   mutation createNewUser{
+    createUser (input: {
+    firstName: "John",
+    lastName: "Doe",
+    email: "doe@gmail.com"
+}){
+    id, firstName, lastName, email, subscribedToUserIds
+}
+} <br>
+   2.9. Create profile. <br>
+   _MUTATION_ <br>
+   mutation createNewProfile{
+    createProfile (input: {
+    avatar:"src/...",
+    sex: "man",
+    birthday: 10.08,
+    country: "USA",
+    street: "unknown str",
+    city: "New York",
+    userId: "fbe2223c-db10-40af-8042-2614d85a90c7",
+    memberTypeId: "basic"
+}){
+    id, avatar, sex, birthday, country, street, city, userId, memberTypeId 
+}
+} <br>
+   2.10. Create post.  <br>
+   _MUTATION_ <br>
+   mutation createNewPost{
+    createPost (input: {
+    title: "new Post",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    userId: "431f1127-4711-45a6-8fad-5ba392ee02fc"
+}){
+    id, title, content, userId
+}
+}  <br>
+   2.11. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs. <br>
+
    * Update gql requests:  
-   2.12. Update user.  
-   2.13. Update profile.  
-   2.14. Update post.  
-   2.15. Update memberType.  
-   2.16. Subscribe to; unsubscribe from.  
+
+   2.12. Update user.  <br>
+   _MUTATION_ <br>
+mutation updateUser{
+    updateUser (input: {
+    id: "431f1127-4711-45a6-8fad-5ba392ee02fc",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john-doe@gmail.com"
+}){
+    id, firstName, lastName, email 
+}
+}
+} <br>
+   2.13. Update profile. <br>
+   _MUTATION_ <br>
+   mutation updateProfile{
+    updateProfile (input: {
+    id: "8bbfdf6e-7270-497e-bb82-8c5ffefc1058",
+    avatar:"src/...",
+    sex: "man",
+    birthday: 10.08,
+    country: "USA",
+    street: "updated str",
+    city: "New York",
+    userId: "431f1127-4711-45a6-8fad-5ba392ee02fc",
+    memberTypeId: "basic"
+}){
+    id, avatar, sex, birthday, country, street, city, userId, memberTypeId  
+}
+}  <br>
+   2.14. Update post. <br>
+   _MUTATION_ <br>
+   mutation updatePost{
+    updatePost (input: {
+    id: "ba97786b-049c-4163-98a9-1814e1a03882",
+    title: "updated Post",
+    content: "updated Text",
+    userId: "431f1127-4711-45a6-8fad-5ba392ee02fc"
+}){
+    id, title, content, userId
+} 
+   2.15. Update memberType.  <br>
+    _MUTATION_ <br>
+   mutation updateMemberType{
+    updateMemberType (input: {
+    id: "basic",
+    discount: 10,
+    monthPostsLimit: 30,
+}){
+    id, discount, monthPostsLimit
+}
+}  <br>
+   2.16. Subscribe to; unsubscribe from.  <br>
+   _MUTATION_ <br>
+   mutation subscribeTo{
+    subscribeTo (input: {
+    id: "431f1127-4711-45a6-8fad-5ba392ee02fc",
+    userId: "eba06236-6678-4869-9eb9-063fe193860e",
+}){
+    id, firstName, lastName, email, subscribedToUserIds
+}
+}  <br>
+ _MUTATION_ <br>
+mutation unsubscribeFrom{
+    unsubscribeFrom (input: {
+    id: "431f1127-4711-45a6-8fad-5ba392ee02fc",
+    userId: "eba06236-6678-4869-9eb9-063fe193860e",
+}){
+    id, firstName, lastName, email, subscribedToUserIds
+}
+}  <br>
    2.17. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs.  
 
 3. Solve `n+1` graphql problem with [dataloader](https://www.npmjs.com/package/dataloader) package in all places where it should be used.  
@@ -39,6 +245,8 @@ If the properties of the entity are not specified, then return the id of it.
 4. Limit the complexity of the graphql queries by their depth with [graphql-depth-limit](https://www.npmjs.com/package/graphql-depth-limit) package.   
    4.1. Provide a link to the line of code where it was used.  
    4.2. Specify a POST body of gql query that ends with an error due to the operation of the rule. Request result should be with `errors` field (and with or without `data:null`) describing the error.  
+
+
 
 ### Description:  
 All dependencies to complete this task are already installed.  
