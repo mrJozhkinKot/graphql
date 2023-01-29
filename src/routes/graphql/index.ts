@@ -2,14 +2,23 @@ import { FastifyPluginAsyncJsonSchemaToTs } from '@fastify/type-provider-json-sc
 import { graphqlBodySchema } from './schema';
 import { graphql, buildSchema } from 'graphql';
 import { UserEntity } from '../../utils/DB/entities/DBUsers';
-import { PostEntity } from '../../utils/DB/entities/DBPosts';
-import { ProfileEntity } from '../../utils/DB/entities/DBProfiles';
-import { MemberTypeEntity } from '../../utils/DB/entities/DBMemberTypes';
-
-
+import { ID, UserWithInfo, UserWithSubscribeTo, UsersWithSubscribersAndSubscriptions, UserInput, ProfileInput, PostInput, UserUpdateInput, ProfileUpdateInput, PostUpdateInput, MemberTypeUpdateInput, SubscribeInput } from './types';
+import DataLoader = require('dataloader');
+//import depthLimit from 'graphql-depth-limit';
 const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
   fastify
 ): Promise<void> => {
+
+
+
+  const loadUserPosts = async (keys: readonly string[]) => {
+    return keys.map((key) =>
+      fastify.db.posts.findMany({ key: 'userId', equals: key })
+    );
+  };
+  
+  const userPostLoader = new DataLoader(loadUserPosts)
+
 
   const  schema = buildSchema(`
   type User {
@@ -139,118 +148,6 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
   }
 `);
 
-type ID = {
-  id: string;
-}
-
-type UserInput = {
-  input: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    subscribedToUserIds?: string[];
-  }
-}
-
-type UserUpdateInput = {
-  input: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    subscribedToUserIds?: string[];
-  }
-}
-
-type ProfileInput = {
-  input: {
-    avatar: string;
-    sex: string;
-    birthday: number;
-    country: string;
-    street: string;
-    city: string;
-    memberTypeId: string;
-    userId: string;
-  }
-}
-
-type ProfileUpdateInput = {
-  input: {
-    id: string;
-    avatar: string;
-    sex: string;
-    birthday: number;
-    country: string;
-    street: string;
-    city: string;
-    memberTypeId: string;
-    userId: string;
-  }
-}
-type PostInput = {
-  input: {
-    title: string;
-    content: string;
-    userId: string;
-  }
-}
-
-type PostUpdateInput = {
-  input: {
-    id: string;
-    title: string;
-    content: string;
-    userId: string;
-  }
-}
-
-type MemberTypeUpdateInput = {
-  input: {
-    id: string;
-    discount: number;
-    monthPostsLimit: number;
-  }
-}
-
-type SubscribeInput = {
-  input: {
-    id: string;
-    userId: string;
-  }
-}
-
- type UserWithInfo = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  subscribedToUserIds: string[];
-  profile: ProfileEntity | null;
-  posts: PostEntity[] | null;
-  memberType: MemberTypeEntity | null;
- }
-
- type UserWithSubscribeTo = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  subscribedToUserIds: string[];
-  userSubscribeTo: UserEntity[];
-  profile: ProfileEntity | null;
- }
-
- type UsersWithSubscribersAndSubscriptions = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  subscribedToUserIds: string[];
-  userSubscribeTo: UserEntity[];
-  subscribedToUser: UserEntity[];
- }
-
 
 const  rootValue = {
   users: async () => await fastify.db.users.findMany(),
@@ -264,8 +161,8 @@ const  rootValue = {
   usersWithInfo: async () => {
     const users = await fastify.db.users.findMany()
     const usersWithInfo: Promise<UserWithInfo>[] = users.map(async(user) => {
-      const userProfile = await fastify.db.profiles.findOne({key: 'userId', equals: user.id})
-      const userPosts = await fastify.db.posts.findMany({key: 'userId', equals: user.id})
+      const userProfile =  await fastify.db.profiles.findOne({key: 'userId', equals: user.id})
+      const userPosts = await userPostLoader.load(user.id)
       const memberType = userProfile? await fastify.db.memberTypes.findOne({key: 'id', equals: userProfile.memberTypeId}): null
       return {...user,
       profile: userProfile,
@@ -278,8 +175,8 @@ const  rootValue = {
   userWithInfo: async ({id}:ID) => {
     const user = await fastify.db.users.findOne({key: 'id', equals: id})
     const userProfile = user? await fastify.db.profiles.findOne({key: 'userId', equals: user.id}): null
-    const userPosts = user?  await fastify.db.posts.findMany({key: 'userId', equals: user.id}): null
-      const memberType = userProfile? await fastify.db.memberTypes.findOne({key: 'id', equals: userProfile.memberTypeId}): null
+    const userPosts = user?  await userPostLoader.load(user.id): null
+    const memberType = userProfile? await fastify.db.memberTypes.findOne({key: 'id', equals: userProfile.memberTypeId}): null
     return {...user, 
       profile: userProfile,
       posts: userPosts,
@@ -308,7 +205,7 @@ const  rootValue = {
   userWithSubscribers: async ({id}: ID) => {
     const users = await fastify.db.users.findMany()
     const user = await fastify.db.users.findOne({key: 'id', equals: id})
-    const userPosts = user?  await fastify.db.posts.findMany({key: 'userId', equals: user.id}): null
+    const userPosts = user?  await userPostLoader.load(user.id): null
     const subscribers: UserEntity[] = []
     users.forEach((userSub: UserEntity) => {
       if (user) { 
@@ -348,13 +245,13 @@ const  rootValue = {
     })
     return usersWithSubscribersAndSubscriptions
   },
-  createUser: async ({input}: UserInput) => {return await fastify.db.users.create(input)},
-  createProfile: async ({input}: ProfileInput) => {return await fastify.db.profiles.create(input)},
-  createPost: async ({input}: PostInput) => {return await fastify.db.posts.create(input)},
-  updateUser: async ({input}: UserUpdateInput) => {return await fastify.db.users.change(input.id, input)},
-  updateProfile: async ({input}: ProfileUpdateInput) => {return await fastify.db.profiles.change(input.id, input)},
-  updatePost: async ({input}: PostUpdateInput) => {return await fastify.db.posts.change(input.id, input)},
-  updateMemberType: async ({input}: MemberTypeUpdateInput) => {return await fastify.db.memberTypes.change(input.id, input)},
+  createUser: async ({input}: UserInput) => await fastify.db.users.create(input),
+  createProfile: async ({input}: ProfileInput) => await fastify.db.profiles.create(input),
+  createPost: async ({input}: PostInput) => await fastify.db.posts.create(input),
+  updateUser: async ({input}: UserUpdateInput) => await fastify.db.users.change(input.id, input),
+  updateProfile: async ({input}: ProfileUpdateInput) => await fastify.db.profiles.change(input.id, input),
+  updatePost: async ({input}: PostUpdateInput) => await fastify.db.posts.change(input.id, input),
+  updateMemberType: async ({input}: MemberTypeUpdateInput) => await fastify.db.memberTypes.change(input.id, input),
   subscribeTo: async ({input}: SubscribeInput) => {
     const user = await fastify.db.users.findOne({key:'id', equals: input.id})
     const subscribtion = await fastify.db.users.findOne({key:'id', equals: input.userId})

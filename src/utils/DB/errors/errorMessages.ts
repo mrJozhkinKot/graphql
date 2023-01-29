@@ -1,7 +1,7 @@
 export const ERROR_USER_NOT_FOUND = "User is not found"
 export const ERROR_BAD_REQUEST = "Invalid request"
 export const ERROR_ID_INVALID = "Invalid ID"
-export const ERROR_PROFILE_EXIST = "This user already has provile"
+export const ERROR_PROFILE_EXIST = "This user already has profile"
 export const ERROR_PROFILE_NOT_FOUND = "Profile is not found"
 export const ERROR_POST_NOT_FOUND = "Post is not found"
 export const ERROR_MEMBER_TYPE_NOT_FOUND = "Member type is not found"
