@@ -174,6 +174,7 @@
           }
           } <br>
           2.11. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs. <br>
+           Schema first, types describes in schema:
            https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/schemaEntities.ts#L85
 
         - Update gql requests:
@@ -248,16 +249,26 @@
           }
           } <br>
           2.17. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs.
-          https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/schemaEntities.ts#L85
+          Schema first, types describes in schema:
+          https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/schemaEntities.ts#L110 <br>
 
 
 3.  Solve `n+1` graphql problem with [dataloader](https://www.npmjs.com/package/dataloader) package in all places where it should be used.  
     You can use only one "findMany" call per loader to consider this task completed.  
     It's ok to leave the use of the dataloader even if only one entity was requested. But additionally (no extra score) you can optimize the behavior for such cases => +1 db call is allowed per loader.  
     3.1. List where the dataloader was used with links to the lines of code (creation in gql context and call in resolver).
+    from: https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L30
+    to: https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L60
+    use in queries for findMany by ids to posts, userSubscribeTo, subscribedToUser:
+    https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L86
+    https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L107
+    https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L126
+    https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L143
+    https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L144
 4.  Limit the complexity of the graphql queries by their depth with [graphql-depth-limit](https://www.npmjs.com/package/graphql-depth-limit) package.  
      4.1. Provide a link to the line of code where it was used.  
      4.2. Specify a POST body of gql query that ends with an error due to the operation of the rule. Request result should be with `errors` field (and with or without `data:null`) describing the error.
+     https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L239
     _QUERY_ <br>
     query depthLimitError ($userId:ID){
     userWithInfo(id: $userId){
