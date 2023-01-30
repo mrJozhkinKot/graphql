@@ -271,29 +271,23 @@
      https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/index.ts#L239
     _QUERY_ <br>
     query depthLimitError ($userId:ID){
-    userWithInfo(id: $userId){
+      query findUsersWithSubscribersAndSubscriptions {
+    usersWithSubscribersAndSubscriptions{
     id, firstName, lastName, email, subscribedToUserIds,
-    profile {
-    id, avatar, sex, birthday, country, street, city, memberTypeId
-    }
-    id {
-    id {
-    id {
-    id {
-    id{
-    id {
-    id
+    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds,    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds,    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds,    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds,    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds,    userSubscribeTo {
+    id, firstName, lastName, email, subscribedToUserIds
     }
     }
     }
     }
     }
-    }
-    posts {
-    id, title, content, userId
-    }
-    memberType {
-    id, discount, monthPostsLimit
+    }, subscribedToUser {
+    id, firstName, lastName, email, subscribedToUserIds
     }
     }
     } <br>
