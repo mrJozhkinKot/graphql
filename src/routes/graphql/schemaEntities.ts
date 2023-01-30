@@ -83,14 +83,12 @@ import { buildSchema } from 'graphql';
     usersWithSubscribersAndSubscriptions: [UserWithSubscribersAndSubscriptions]
   }
   input UserInput {
-    id: ID
     firstName: String!
     lastName: String!
     email: String!
     subscribedToUserIds: [String]
   }
   input ProfileInput {
-    id: ID
     avatar: String!
     sex: String!
     birthday: Float!
@@ -101,28 +99,53 @@ import { buildSchema } from 'graphql';
     userId: ID!
   }
   input PostInput {
-    id: String
     title: String!
     content: String!
     userId: String!
   }
   input MemberTypeInput {
-    id: String
+    discount: Float
+    monthPostsLimit: Float
+  }
+  input UserUpdateInput {
+    id: ID!
+    firstName: String
+    lastName: String
+    email: String
+    subscribedToUserIds: [String]
+  }
+  input ProfileUpdateInput {
+    id: ID!
+    avatar: String
+    sex: String
+    birthday: Float
+    country: String
+    street: String
+    city: String
+    memberTypeId: String
+  }
+  input PostUpdateInput {
+    id: ID!
+    title: String
+    content: String
+  }
+  input MemberTypeUpdateInput {
+    id: String!
     discount: Float
     monthPostsLimit: Float
   }
   input SubscribeInput {
-    id: String,
-    userId: String
+    id: String!,
+    userId: String!
   }
   type Mutation {
     createUser(input: UserInput): User
     createProfile(input: ProfileInput): Profile
     createPost(input: PostInput): Post
-    updateUser(input: UserInput): User
-    updateProfile(input: ProfileInput): Profile
-    updatePost(input: PostInput): Post
-    updateMemberType(input: MemberTypeInput): MemberType
+    updateUser(input: UserUpdateInput): User
+    updateProfile(input: ProfileUpdateInput): Profile
+    updatePost(input: PostUpdateInput): Post
+    updateMemberType(input: MemberTypeUpdateInput): MemberType
     subscribeTo(input: SubscribeInput): User
     unsubscribeFrom(input: SubscribeInput): User
   }

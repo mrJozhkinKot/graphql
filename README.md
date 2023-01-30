@@ -174,6 +174,7 @@
           }
           } <br>
           2.11. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs. <br>
+           https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/schemaEntities.ts#L85
 
         - Update gql requests:
 
@@ -201,7 +202,6 @@
           country: "USA",
           street: "updated str",
           city: "New York",
-          userId: "431f1127-4711-45a6-8fad-5ba392ee02fc",
           memberTypeId: "basic"
           }){
           id, avatar, sex, birthday, country, street, city, userId, memberTypeId
@@ -214,7 +214,6 @@
           id: "ba97786b-049c-4163-98a9-1814e1a03882",
           title: "updated Post",
           content: "updated Text",
-          userId: "431f1127-4711-45a6-8fad-5ba392ee02fc"
           }){
           id, title, content, userId
           }
@@ -249,6 +248,8 @@
           }
           } <br>
           2.17. [InputObjectType](https://graphql.org/graphql-js/type/#graphqlinputobjecttype) for DTOs.
+          https://github.com/mrJozhkinKot/graphql/blob/develop/src/routes/graphql/schemaEntities.ts#L85
+
 
 3.  Solve `n+1` graphql problem with [dataloader](https://www.npmjs.com/package/dataloader) package in all places where it should be used.  
     You can use only one "findMany" call per loader to consider this task completed.  
